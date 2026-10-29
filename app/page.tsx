@@ -66,6 +66,7 @@ export default function Home() {
     sourceUrl?: string;
     attribution?: string;
     freshness?: string;
+    error?: string;
   } | null>(null);
   useEffect(() => {
     fetch("/api/iski")
@@ -77,7 +78,13 @@ export default function Home() {
         setCurrentWater(json);
       })
       .catch((err) => {
-        console.error("İSKİ güncel veri hatası:", err);
+        console.error("Güncel veri hatası:", err);
+        setCurrentWater({
+          data: [],
+          sonGuncellemeZamani: null,
+          error: err instanceof Error ? err.message : "Güncel veri alınamadı.",
+          sourceUrl: "https://www.dolulukorani.com/api/v1/provinces/istanbul/history?days=30",
+        });
       });
   }, []);
   const last=rows[rows.length-1];
@@ -168,7 +175,7 @@ const forecast = useMemo(() => {
               {currentWater?.data?.length ? pct(Number(currentWater.data[0].dolulukOrani)) : "—"}
             </p>
             <p className="mt-1 text-sm text-stone-700">
-              {currentWater?.data?.[0]?.tarih ? `Ölçüm: ${dateText(currentWater.data[0].tarih)}` : "Güncel ölçüm henüz alınamadı"}
+              {currentWater?.data?.[0]?.tarih ? `Ölçüm: ${dateText(currentWater.data[0].tarih)}` : currentWater?.error ? "Güncel veri şu an alınamadı" : "Güncel ölçüm bekleniyor"}
             </p>
           </div>
         </div>
@@ -177,6 +184,7 @@ const forecast = useMemo(() => {
           <span>{currentWater?.sourceName ?? "Canlı kaynak bekleniyor"}</span>
           {currentWater?.freshness && <span>Veri tazeliği: {currentWater.freshness}</span>}
           {!currentWater && <span role="status">Güncel veri kontrol ediliyor…</span>}
+          {currentWater?.error && <span role="status">Bağlantı hatası: {currentWater.error}</span>}
           {currentWater?.attribution && <span>{currentWater.attribution}</span>}
         </div>
       </section>
