@@ -1,22 +1,25 @@
 import { NextResponse } from "next/server";
 
-const OFFICIAL_URL =
-  "https://iskiapi.iski.istanbul/api/iski/baraj/sonOnDortGunDoluluk/v2";
-const FALLBACK_URL =
-  "https://www.dolulukorani.com/api/v1/provinces/istanbul";
+const OFFICIAL_URL = "https://iskiapi.iski.istanbul/api/iski/baraj/sonOnDortGunDoluluk/v2";
+const FALLBACK_URL = "https://www.dolulukorani.com/api/v1/provinces/istanbul/history?days=30";
 
 async function readJson(url: string, headers: Record<string, string> = {}) {
   const response = await fetch(url, {
     cache: "no-store",
-    signal: AbortSignal.timeout(12000),
-    headers: { Accept: "application/json", ...headers },
+    signal: AbortSignal.timeout(10000),
+    headers: { Accept: "application/json", "User-Agent": "Mozilla/5.0", ...headers },
   });
   if (!response.ok) throw new Error(`HTTP ${response.status} from ${new URL(url).host}`);
   return response.json();
 }
 
+function asNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() && Number.isFinite(Number(value))) return Number(value);
+  return null;
+}
+
 export async function GET() {
-  // Try the official ISKI API first; use the documented public fallback if unreachable.
   try {
     const json = await readJson(OFFICIAL_URL, {
       Origin: "https://grafikgoster.iski.gov.tr",
@@ -25,34 +28,34 @@ export async function GET() {
     if (Array.isArray(json?.data) && json.data.length) {
       return NextResponse.json({
         ...json,
-        sourceUrl: OFFICIAL_URL,
         sourceName: "İSKİ",
+        sourceUrl: OFFICIAL_URL,
         sonGuncellemeZamani: json.sonGuncellemeZamani ?? json.data[json.data.length - 1]?.tarih ?? null,
       });
     }
-  } catch (error) {
-    console.warn("Official ISKI API unavailable; trying public fallback.", error);
+    throw new Error("İSKİ yanıtında veri kaydı bulunamadı.");
+  } catch (officialError) {
+    console.warn("Official ISKI endpoint unavailable; trying public fallback.");
   }
 
   try {
     const json = await readJson(FALLBACK_URL);
-    const record = Array.isArray(json?.data)
-      ? json.data.find((item: any) => item?.slug === "istanbul") ?? json.data[0]
-      : json?.data ?? json;
-    const rawRate = Number(record?.fill_rate);
-    if (!Number.isFinite(rawRate)) {
-      throw new Error("Fallback response did not contain a numeric fill_rate.");
-    }
+    const records = Array.isArray(json?.data) ? json.data : Array.isArray(json?.history) ? json.history : [];
+    const latest = records.length ? records[records.length - 1] : null;
+    if (!latest) throw new Error("Alternatif kaynakta kayıt bulunamadı.");
+
+    const rawRate = asNumber(latest.fill_rate ?? latest.fillRate ?? latest.dolulukOrani ?? latest.doluluk_orani ?? latest.value ?? latest.rate);
+    if (rawRate === null) throw new Error("Alternatif kaynağın doluluk alanı tanınamadı.");
+
+    const fraction = rawRate > 1 ? rawRate / 100 : rawRate;
+    const measuredAt = latest.measured_at ?? latest.measuredAt ?? latest.date ?? latest.tarih ?? latest.timestamp ?? null;
     return NextResponse.json({
-      data: [{
-        dolulukOrani: rawRate / 100,
-        tarih: record?.measured_at ?? record?.date ?? null,
-      }],
-      sonGuncellemeZamani: record?.measured_at ?? null,
-      sourceName: "dolulukorani.com (resmî kurum verilerinden derlenmiştir)",
+      data: [{ dolulukOrani: fraction, tarih: measuredAt }],
+      sonGuncellemeZamani: measuredAt,
+      sourceName: json?.attribution?.source ?? "dolulukorani.com (resmî kurum verilerinden derlenmiştir)",
       sourceUrl: FALLBACK_URL,
-      attribution: json?.attribution ?? "Kaynak: dolulukorani.com (resmî kurum verilerinden derlenmiştir)",
-      freshness: record?.freshness ?? "unknown",
+      attribution: typeof json?.attribution === "string" ? json.attribution : "Kaynak: dolulukorani.com (resmî kurum verilerinden derlenmiştir).",
+      freshness: latest.freshness ?? "Kaynağın ölçüm tarihine göre değerlendirilmelidir",
     });
   } catch (error) {
     return NextResponse.json({
