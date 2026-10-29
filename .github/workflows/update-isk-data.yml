@@ -1,0 +1,51 @@
+name: Update official ISKI reservoir data
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 6 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Fetch ISKI daily data
+        run: |
+          python - <<'PY'
+          import json
+          import urllib.request
+          from pathlib import Path
+
+          url = "https://iskiapi.iski.istanbul/api/iski/baraj/sonOnDortGunDoluluk/v2"
+          req = urllib.request.Request(url, headers={
+              "Accept": "application/json",
+              "Origin": "https://grafikgoster.iski.gov.tr",
+              "Referer": "https://grafikgoster.iski.gov.tr/baraj-doluluk/",
+              "User-Agent": "Mozilla/5.0"
+          })
+
+          with urllib.request.urlopen(req, timeout=30) as response:
+              payload = json.load(response)
+
+          if not isinstance(payload.get("data"), list) or not payload["data"]:
+              raise SystemExit("ISKI API response has no daily records")
+
+          out = Path("istanbul-su-web/public/iski-guncel.json")
+          out.parent.mkdir(parents=True, exist_ok=True)
+          out.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+          print(f"Saved {len(payload['data'])} records; last update: {payload.get('sonGuncellemeZamani')}")
+          PY
+
+      - name: Commit snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add istanbul-su-web/public/iski-guncel.json
+          git diff --cached --quiet || git commit -m "Update ISKI reservoir data"
+          git push
