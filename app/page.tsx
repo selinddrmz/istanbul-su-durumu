@@ -60,8 +60,12 @@ export default function Home() {
   },[]);
 
   const [currentWater, setCurrentWater] = useState<{
-    data: { dolulukOrani: number; tarih: string }[];
-    sonGuncellemeZamani: string;
+    data: { dolulukOrani: number; tarih: string | null }[];
+    sonGuncellemeZamani: string | null;
+    sourceName?: string;
+    sourceUrl?: string;
+    attribution?: string;
+    freshness?: string;
   } | null>(null);
   useEffect(() => {
     fetch("/api/iski")
@@ -150,6 +154,31 @@ const forecast = useMemo(() => {
         <Kpi title="Son ölçüm" value={dateText(last.Tarih)} note="Güncel doluluk anlamına gelmez"/>
         <Kpi title="En yüksek tarihsel ortalama" value={pct(averages[0]?.avg??0)} note={names[averages[0]?.key??"Terkos"]}/>
         <Kpi title="En düşük tarihsel ortalama" value={pct(averages[averages.length-1]?.avg??0)} note={names[averages[averages.length-1]?.key??"Alibey"]}/>
+      </section>
+
+      <section className="rounded-2xl border border-emerald-900/20 bg-[#eaf2eb] p-5 sm:p-7" aria-labelledby="live-water-title">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-emerald-900">Canlı veri · Ayrı kaynak</p>
+            <h2 id="live-water-title" className="mt-1 font-serif text-2xl font-bold">İstanbul güncel doluluk oranı</h2>
+            <p className="mt-2 max-w-[65ch] text-sm leading-6 text-stone-700">Bu gösterge, tarihsel grafiklerden ayrı olarak güncel veri kaynağından alınır.</p>
+          </div>
+          <div className="min-w-40">
+            <p className="font-serif text-4xl font-bold text-emerald-950">
+              {currentWater?.data?.length ? pct(Number(currentWater.data[0].dolulukOrani)) : "—"}
+            </p>
+            <p className="mt-1 text-sm text-stone-700">
+              {currentWater?.data?.[0]?.tarih ? `Ölçüm: ${dateText(currentWater.data[0].tarih)}` : "Güncel ölçüm henüz alınamadı"}
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-stone-700">
+          {currentWater?.sourceUrl && <a className="font-semibold underline text-emerald-950" href={currentWater.sourceUrl} target="_blank" rel="noreferrer">Veri kaynağını aç ↗</a>}
+          <span>{currentWater?.sourceName ?? "Canlı kaynak bekleniyor"}</span>
+          {currentWater?.freshness && <span>Veri tazeliği: {currentWater.freshness}</span>}
+          {!currentWater && <span role="status">Güncel veri kontrol ediliyor…</span>}
+          {currentWater?.attribution && <span>{currentWater.attribution}</span>}
+        </div>
       </section>
 
       <section className="rounded-2xl border border-stone-300 bg-white p-5 sm:p-7">
