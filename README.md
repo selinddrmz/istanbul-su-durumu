@@ -35,7 +35,9 @@ Kurgusal müşteri bir çevre haber sitesidir. Hedef kullanıcılar kuraklık ha
 ### Canlı veri
 - Uygulama önce İSKİ'nin baraj doluluk API'sini dener.
 - Resmî uç nokta yanıt vermediğinde [dolulukorani.com'un İstanbul geçmiş verisi API'si](https://www.dolulukorani.com/api/v1/provinces/istanbul/history?days=30) yedek kaynak olarak kullanılır.
-- Sunucu tarafındaki Next.js uç noktası: `/api/iski`.
+- Sunucu tarafındaki Next.js uç noktası: `/api/iski`; sayfa açıldığında güncel kaynak kontrol edilir.
+- `.github/workflows/update-isk-data.yml`, her gün 06:17 UTC'de (Türkiye saatiyle 09:17) kaynakları kontrol ederek `public/iski-guncel.json` dosyasına son başarılı snapshot'ı yazar.
+- Canlı uç noktalar erişilemezse arayüz bu snapshot'ı yedek olarak dener ve bunun canlı veri olmadığını açıkça etiketler. Snapshot bulunamazsa hata durumu gösterilir.
 - Canlı kart, kaynağın ölçüm tarihini gösterir. Kaynak verinin güncelliği ölçüm tarihine göre değerlendirilmelidir.
 - Yedek kaynak, kendi atıf bilgisinde verileri resmî kurum kaynaklarından derlediğini belirtir; uygulama bunu doğrudan İSKİ API'si gibi sunmaz.
 
@@ -58,6 +60,10 @@ flowchart TD
   F --> H[dolulukorani.com yedek API]
   G --> I[Canlı doluluk kartı]
   H --> I
+  J[GitHub Actions günlük cron] --> G
+  J --> H
+  J --> K[public/iski-guncel.json snapshot]
+  K --> I
 ```
 
 ## Teknolojiler
@@ -99,6 +105,10 @@ ChatGPT; hata ayıklama, kod değişiklikleri için öneri, dokümantasyon tasla
 ## CV için proje cümlesi
 
 İBB tarihsel baraj verileri ve ayrı bir canlı veri kaynağıyla İstanbul su durumunu izleyen; Next.js, TypeScript ve Recharts kullanarak filtrelenebilir grafikler, mevsimsel tahmin ve belirsizlik bandı sunan duyarlı bir editoryal veri ürünü geliştirdim.
+
+## Otomatik veri güncellemesi
+
+GitHub Actions iş akışı her gün 06:17 UTC'de çalışır; `workflow_dispatch` ile elle de başlatılabilir. Önce İSKİ uç noktası, başarısız olursa kaynak atıflı yedek uç nokta denenir. Başarılı yanıt `public/iski-guncel.json` dosyasına kaydedilir ve değişiklik depoya commit edilir. Arayüz canlı API isteği başarısız olduğunda bu dosyayı son başarılı snapshot olarak kullanır. GitHub Actions çalıştırma geçmişinden günlük işin gerçekten başarılı olduğu ayrıca doğrulanmalıdır.
 
 ## Geliştirme notları
 
