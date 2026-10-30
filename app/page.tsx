@@ -154,17 +154,28 @@ export default function Home() {
 
   const reset=()=>{setStartYear(String(minYear));setEndYear(String(maxYear));setSearch("");};
   return <main className="min-h-screen bg-[#f7f5ef] text-[#20251f]">
-    <header className="border-b border-stone-300"><div className="mx-auto max-w-7xl px-5 py-7 sm:px-8">
-      <p className="text-xs font-bold uppercase tracking-[.22em] text-emerald-800">İstanbul · Su ve iklim dosyası</p>
-      <div className="mt-3 grid gap-5 md:grid-cols-[1fr_260px] md:items-end">
-        <div><h1 className="max-w-4xl font-serif text-4xl font-bold leading-tight sm:text-6xl">İstanbul barajlarında doluluk durumu</h1>
-        <p className="mt-4 max-w-[65ch] leading-7 text-stone-700">Barajların tarihsel doluluk kayıtlarını inceleyin, mevsimsel örüntüleri karşılaştırın ve geçmiş veriye dayalı basit tahmini keşfedin.</p></div>
-        <aside className="border-l-2 border-emerald-800 pl-4 text-sm leading-6 text-stone-600"><b className="text-stone-900">Tarihsel veri paneli</b><p>Son ölçüm: {dateText(last.Tarih)}</p><p>Panel yükleme zamanı: {loadedAt}</p></aside>
+    <header className="hero-shell relative isolate overflow-hidden border-b border-cyan-900/15">
+      <div className="hero-watermark" aria-hidden="true"/>
+      <div className="relative z-10 mx-auto grid max-w-[1500px] gap-9 px-5 pb-12 pt-10 sm:px-8 sm:pb-16 sm:pt-14 lg:grid-cols-[minmax(0,1fr)_330px] lg:items-end">
+        <div>
+          <p className="hero-kicker">İSTANBUL · SU VE İKLİM DOSYASI</p>
+          <h1 className="hero-title mt-6 max-w-6xl font-serif text-5xl font-black uppercase leading-[.98] tracking-[-.045em] sm:text-7xl lg:text-[clamp(5rem,8vw,8.6rem)]">İSTANBUL BARAJLARINDA DOLULUK DURUMU</h1>
+          <p className="hero-description mt-7 max-w-3xl text-lg leading-8 sm:text-2xl sm:leading-10">Barajların tarihsel doluluk oranlarını inceleyin, mevsimsel değişimleri karşılaştırın ve geleceğe yönelik tahminleri keşfedin.</p>
+          <div className="mt-8 flex flex-wrap items-center gap-5 sm:gap-7">
+            <a className="hero-source" href={sourceUrl} target="_blank" rel="noreferrer">İBB AÇIK VERİ KAYNAĞI <span aria-hidden="true">↗</span></a>
+            <div className="hero-date"><span className="text-2xl" aria-hidden="true">▦</span><span><span className="block text-sm text-slate-600">VERİ ARALIĞI</span><b>{dateText(rows[0].Tarih)} – {dateText(last.Tarih)}</b></span></div>
+          </div>
+        </div>
+        <aside className="hero-info-card" aria-label="Tarihsel veri bilgisi">
+          <p className="hero-info-title"><span aria-hidden="true">◷</span> TARİHSEL VERİ PANELİ</p>
+          <p><span aria-hidden="true">●</span> Son ölçüm: <b>{dateText(last.Tarih)}</b></p>
+          <p><span aria-hidden="true">◷</span> Panel yükleme zamanı:<br/><b className="ml-7">{loadedAt}</b></p>
+          <p className="hero-info-note">Tarihsel veri, güncel doluluk oranı anlamına gelmez.</p>
+        </aside>
       </div>
-      <div className="mt-4 flex flex-wrap gap-4 text-sm"><a className="font-semibold underline text-emerald-900" href={sourceUrl} target="_blank" rel="noreferrer">İBB açık veri kaynağı ↗</a><span>Veri aralığı: {dateText(rows[0].Tarih)} – {dateText(last.Tarih)}</span></div>
-    </div></header>
+    </header>
     <div className="mx-auto max-w-7xl space-y-7 px-5 py-7 sm:px-8">
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Özet göstergeler">
+      <section className="kpi-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Özet göstergeler">
         <Kpi title="Tarihsel kayıt" value={rows.length.toLocaleString("tr-TR")} note="Tekilleştirilmiş ölçüm günü"/>
         <Kpi title="Son ölçüm" value={dateText(last.Tarih)} note="Güncel doluluk anlamına gelmez"/>
         <Kpi title="En yüksek tarihsel ortalama" value={pct(averages[0]?.avg??0)} note={names[averages[0]?.key??"Terkos"]}/>
@@ -244,5 +255,5 @@ export default function Home() {
 }
 
 function SectionLabel({children}:{children:React.ReactNode}) { return <p className="text-xs font-bold uppercase tracking-widest text-emerald-800">{children}</p>; }
-function Kpi({title,value,note}:{title:string;value:string;note:string}) { return <article className="border-y-2 border-stone-300 bg-white px-5 py-4"><p className="text-xs font-bold uppercase tracking-wider text-stone-600">{title}</p><p className="mt-2 font-serif text-3xl font-bold">{value}</p><p className="mt-1 text-sm text-stone-600">{note}</p></article>; }
+function Kpi({title,value,note}:{title:string;value:string;note:string}) { return <article className="kpi-card rounded-2xl bg-white px-6 py-5"><p className="text-sm font-extrabold uppercase tracking-[.12em] text-slate-600">{title}</p><p className="mt-3 font-serif text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">{value}</p><p className="mt-2 text-base text-slate-600">{note}</p></article>; }
 function Empty(){return <p className="rounded-lg border border-dashed border-stone-400 bg-stone-50 p-5 text-sm text-stone-700">Bu filtrelerle eşleşen kayıt bulunamadı. Yıl aralığını değiştirin.</p>;}
