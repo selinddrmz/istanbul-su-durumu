@@ -146,7 +146,7 @@ export default function Home() {
   const details=useMemo(()=>filtered.filter(r=>{const dateMatch=!tableSearch||dateText(r.Tarih).toLocaleLowerCase("tr-TR").includes(tableSearch.toLocaleLowerCase("tr-TR"));const value=Number(r[reservoir])*100;const minMatch=minRate===""||value>=Number(minRate);const maxMatch=maxRate===""||value<=Number(maxRate);return dateMatch&&minMatch&&maxMatch;}).sort((a,b)=>{
     const av=sortKey==="Tarih"?+new Date(a.Tarih):Number(a[sortKey]),bv=sortKey==="Tarih"?+new Date(b.Tarih):Number(b[sortKey]);
     return (av-bv)*(ascending?1:-1);
-  }).slice(0,250),[filtered,search,sortKey,ascending]);
+  }).slice(0,250),[filtered,tableSearch,minRate,maxRate,reservoir,sortKey,ascending]);
 
   if(loading)return <main className="min-h-screen bg-[#f7f5ef] p-8"><div className="mx-auto max-w-6xl animate-pulse space-y-5"><div className="h-44 rounded-2xl bg-stone-200"/><div className="grid gap-4 md:grid-cols-4">{[1,2,3,4].map(x=><div key={x} className="h-24 bg-stone-200 rounded-xl"/>)}</div><p role="status">Tarihsel veriler yükleniyor…</p></div></main>;
   if(error||!last)return <main className="min-h-screen bg-[#f7f5ef] p-8"><div className="mx-auto max-w-2xl rounded-xl bg-white p-8"><h1 className="font-serif text-3xl">Veri yüklenemedi</h1><p className="mt-3">{error||"Kayıt bulunamadı."}</p><a className="mt-4 inline-block underline" href={sourceUrl} target="_blank" rel="noreferrer">İBB veri kaynağı</a></div></main>;
