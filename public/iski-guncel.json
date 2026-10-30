@@ -1,0 +1,104 @@
+{
+  "source": "dolulukorani.com (official authority data aggregation)",
+  "sourceUrl": "https://www.dolulukorani.com/api/v1/provinces/istanbul/history?days=30",
+  "retrievedAt": "2026-10-30T10:39:55.160127+00:00",
+  "data": [
+    {
+      "date": "2026-10-01",
+      "fill_rate": 38.4
+    },
+    {
+      "date": "2026-10-03",
+      "fill_rate": 39
+    },
+    {
+      "date": "2026-10-04",
+      "fill_rate": 39
+    },
+    {
+      "date": "2026-10-05",
+      "fill_rate": 39
+    },
+    {
+      "date": "2026-10-06",
+      "fill_rate": 38.9
+    },
+    {
+      "date": "2026-10-07",
+      "fill_rate": 38.8
+    },
+    {
+      "date": "2026-10-09",
+      "fill_rate": 38.5
+    },
+    {
+      "date": "2026-10-10",
+      "fill_rate": 38.3
+    },
+    {
+      "date": "2026-10-11",
+      "fill_rate": 38.1
+    },
+    {
+      "date": "2026-10-12",
+      "fill_rate": 37.9
+    },
+    {
+      "date": "2026-10-13",
+      "fill_rate": 37.7
+    },
+    {
+      "date": "2026-10-14",
+      "fill_rate": 38.1
+    },
+    {
+      "date": "2026-10-15",
+      "fill_rate": 45.2
+    },
+    {
+      "date": "2026-10-16",
+      "fill_rate": 48
+    },
+    {
+      "date": "2026-10-18",
+      "fill_rate": 52.4
+    },
+    {
+      "date": "2026-10-19",
+      "fill_rate": 53.2
+    },
+    {
+      "date": "2026-10-20",
+      "fill_rate": 53.2
+    },
+    {
+      "date": "2026-10-24",
+      "fill_rate": 53
+    },
+    {
+      "date": "2026-10-25",
+      "fill_rate": 52.9
+    },
+    {
+      "date": "2026-10-26",
+      "fill_rate": 52.8
+    },
+    {
+      "date": "2026-10-27",
+      "fill_rate": 53
+    },
+    {
+      "date": "2026-10-28",
+      "fill_rate": 53.7
+    },
+    {
+      "date": "2026-10-29",
+      "fill_rate": 53.6
+    },
+    {
+      "date": "2026-10-30",
+      "fill_rate": 53.7
+    }
+  ],
+  "attribution": "Kaynak: dolulukorani.com (resmi kurum verilerinden derlenmiştir)"
+}
