@@ -8,6 +8,7 @@
 
 - **Uygulama:** https://istanbul-su-durumu-ivbw.vercel.app
 - **GitHub:** https://github.com/selinddrmz/istanbul-su-durumu
+- **Portfolyo vaka çalışması:** https://portfolio-6rrk.vercel.app/projects/istanbul-su-durumu
 
 ## Problem ve kullanıcı
 
@@ -105,6 +106,14 @@ ChatGPT; hata ayıklama, kod değişiklikleri için öneri, dokümantasyon tasla
 ## CV için proje cümlesi
 
 İBB tarihsel baraj verileri ve ayrı bir canlı veri kaynağıyla İstanbul su durumunu izleyen; Next.js, TypeScript ve Recharts kullanarak filtrelenebilir grafikler, mevsimsel tahmin ve belirsizlik bandı sunan duyarlı bir editoryal veri ürünü geliştirdim.
+
+## Portfolyo vaka çalışması ve demo
+
+- Vaka çalışması: [İstanbul Su Durumu](https://portfolio-6rrk.vercel.app/projects/istanbul-su-durumu)
+- 60–90 saniyelik kayıt için konuşma metni: [`docs/demo-video-metni.md`](docs/demo-video-metni.md)
+- Gerçek görev testi kayıt şablonu: [`docs/kullanici-testi.md`](docs/kullanici-testi.md)
+
+Vaka sayfasında üç cihazda bağlantı açılma ön kontrolü belgelenmiştir. Bu, iki hedef kullanıcıyla yapılması gereken üç görevli kullanılabilirlik testinin yerine geçmez. Demo videosu kaydedilip bağlantısı eklenene kadar teslim maddesi tamamlanmış sayılmaz.
 
 ## Otomatik veri güncellemesi
 
