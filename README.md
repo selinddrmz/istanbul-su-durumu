@@ -112,6 +112,7 @@ ChatGPT; hata ayıklama, kod değişiklikleri için öneri, dokümantasyon tasla
 - Vaka çalışması: [İstanbul Su Durumu](https://portfolio-6rrk.vercel.app/projects/istanbul-su-durumu)
 - 60–90 saniyelik kayıt için konuşma metni: [`docs/demo-video-metni.md`](docs/demo-video-metni.md)
 - Gerçek görev testi kayıt şablonu: [`docs/kullanici-testi.md`](docs/kullanici-testi.md)
+- Güncel teslim kontrolü: [`docs/teslim-kontrol-listesi.md`](docs/teslim-kontrol-listesi.md)
 
 Vaka sayfasında üç cihazda bağlantı açılma ön kontrolü belgelenmiştir. Bu, iki hedef kullanıcıyla yapılması gereken üç görevli kullanılabilirlik testinin yerine geçmez. Demo videosu kaydedilip bağlantısı eklenene kadar teslim maddesi tamamlanmış sayılmaz.
 
