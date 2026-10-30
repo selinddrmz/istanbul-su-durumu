@@ -72,6 +72,7 @@ export default function Home() {
     sourceUrl?: string;
     attribution?: string;
     freshness?: string;
+    checkedAt?: string;
     error?: string;
   } | null>(null);
   useEffect(() => {
@@ -87,7 +88,7 @@ export default function Home() {
         if (!response.ok || !Array.isArray(json?.data) || !json.data.length) {
           throw new Error(json?.detail || json?.error || "Güncel veri alınamadı.");
         }
-        if (active) setCurrentWater(json);
+        if (active) setCurrentWater({ ...json, checkedAt: new Date().toISOString() });
       } catch (liveError) {
         // Canlı kaynaklar erişilemezse GitHub Actions'ın son başarılı günlük
         // snapshot'ını kullan. Bu kayıt canlı ölçüm gibi etiketlenmez.
@@ -115,6 +116,7 @@ export default function Home() {
               sourceUrl: snapshot.sourceUrl ?? "https://www.dolulukorani.com/api/v1/provinces/istanbul/history?days=30",
               attribution: "Canlı API'ye erişilemediği için son başarılı günlük kayıt gösteriliyor.",
               freshness: "Bu kayıt canlı değildir; ölçüm tarihi kontrol edilmelidir.",
+              checkedAt: new Date().toISOString(),
             });
           }
         } catch (snapshotError) {
@@ -124,6 +126,7 @@ export default function Home() {
               data: [],
               sonGuncellemeZamani: null,
               error: liveError instanceof Error ? liveError.message : "Güncel veri alınamadı.",
+              checkedAt: new Date().toISOString(),
               sourceUrl: "https://www.dolulukorani.com/api/v1/provinces/istanbul/history?days=30",
             });
           }
@@ -178,12 +181,18 @@ export default function Home() {
   }, [filtered, reservoir, currentWater]);
   const sameDay=useMemo(()=>{
     if(!last)return [];
-    const d=new Date(last.Tarih),y=d.getFullYear();
-    return Array.from({length:10},(_,i)=>y-9+i).flatMap(year=>{
-      const match=rows.find(r=>{const x=new Date(r.Tarih);return x.getFullYear()===year&&x.getMonth()===d.getMonth()&&x.getDate()===d.getDate();});
-      return match?[{year:String(year),value:Number(match[reservoir])*100}]:[];
+    // Karşılaştırma gününü mümkünse en güncel canlı ölçümden al; canlı kaynak
+    // yoksa tarihsel dosyanın son gününe geri dön.
+    const reference = currentWater?.data?.[0]?.tarih
+      ? new Date(currentWater.data[0].tarih)
+      : new Date(last.Tarih);
+    if(Number.isNaN(reference.getTime())) return [];
+    const year = reference.getFullYear();
+    return Array.from({length:10},(_,i)=>year-9+i).flatMap(targetYear=>{
+      const match=rows.find(r=>{const x=new Date(r.Tarih);return x.getFullYear()===targetYear&&x.getMonth()===reference.getMonth()&&x.getDate()===reference.getDate();});
+      return match?[{year:String(targetYear),value:Number(match[reservoir])*100}]:[];
     });
-  },[rows,last,reservoir]);
+  },[rows,last,reservoir,currentWater]);
   const matchingDetails=useMemo(()=>filtered.filter(r=>{const dateMatch=!tableSearch||dateText(r.Tarih).includes(tableSearch.trim());const raw=Number(r[reservoir]);const value=Number.isFinite(raw)?(raw<=1?raw*100:raw):NaN;const minMatch=minRate===""||(Number.isFinite(value)&&value>=Number(minRate));const maxMatch=maxRate===""||(Number.isFinite(value)&&value<=Number(maxRate));return dateMatch&&minMatch&&maxMatch;}),[filtered,tableSearch,minRate,maxRate,reservoir]);
   const details=useMemo(()=>[...matchingDetails].sort((a,b)=>{
     const av=sortKey==="Tarih"?+new Date(a.Tarih):Number(a[sortKey]),bv=sortKey==="Tarih"?+new Date(b.Tarih):Number(b[sortKey]);
@@ -242,6 +251,7 @@ export default function Home() {
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-stone-700">
           {currentWater?.sourceUrl && <a className="font-semibold underline text-emerald-950" href={currentWater.sourceUrl} target="_blank" rel="noreferrer">Veri kaynağını aç ↗</a>}
           <span>{currentWater?.sourceName ?? "Canlı kaynak bekleniyor"}</span>
+          {currentWater?.checkedAt && <span>Son kontrol: {new Date(currentWater.checkedAt).toLocaleString("tr-TR")}</span>}
           {currentWater?.freshness && <span>Veri tazeliği: {currentWater.freshness}</span>}
           {!currentWater && <span role="status">Güncel veri kontrol ediliyor…</span>}
           {currentWater?.error && <span role="status">Bağlantı hatası: {currentWater.error}</span>}
@@ -277,7 +287,7 @@ export default function Home() {
         <article className="rounded-2xl border border-stone-300 bg-white p-5 sm:p-7"><SectionLabel>03 · Zorunlu ileri özellik</SectionLabel><h2 className="mt-2 font-serif text-3xl font-bold">Mevsimsel tahmin ve belirsizlik</h2><p className="mt-2 text-sm leading-6 text-stone-600">Önümüzdeki 12 ay için çizgi, seçilen dönemdeki aynı ayların ortalamasını; gölgeli bant ±1 standart sapmayı gösterir.</p><div className="mt-5 h-72" role="img" aria-label={`${names[reservoir]} için mevsimsel tahmin ve belirsizlik bandı`}><ResponsiveContainer width="100%" height="100%"><ComposedChart data={forecast}><CartesianGrid strokeDasharray="3 3" stroke="#dedbd2"/><XAxis dataKey="month"/><YAxis domain={[0,100]} tickFormatter={v=>`${v}%`}/><Tooltip formatter={(v,n)=>[`${Number(v).toLocaleString("tr-TR",{maximumFractionDigits:1})}%`,String(n)]}/><Area dataKey="low" stackId="range" stroke="none" fill="#fff" name="Alt sınır"/><Area dataKey="band" stackId="range" stroke="none" fill="#a7cdb8" fillOpacity={.9} name="Belirsizlik bandı"/><Line dataKey="pred" name="Mevsimsel ortalama" stroke="#176b50" strokeWidth={3} dot={{r:3}}/></ComposedChart></ResponsiveContainer></div><p className="mt-3 text-sm leading-6 text-stone-600"><b>Yöntem sınırı:</b> Bu basit mevsimsel tahmin, seçilen tarih aralığındaki aynı takvim aylarının ortalamasını kullanır; gölgeli alan ±1 örnek standart sapmadır. Yağış, tüketim, hava durumu ve işletme kararlarını içermez; resmî tahmin veya güncel ölçüm değildir.</p><button className="mt-3 rounded-lg border border-stone-400 px-3 py-2 text-sm underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-800" onClick={()=>setShowForecastTable(!showForecastTable)}>{showForecastTable?"Tahmin tablosunu gizle":"Tahmin verisini tablo olarak gör"}</button>{showForecastTable&&<div className="mt-3 overflow-auto"><table className="w-full text-sm"><thead><tr><th className="p-2 text-left">Ay</th><th className="p-2 text-right">Tahmin</th><th className="p-2 text-right">Alt sınır</th><th className="p-2 text-right">Üst sınır</th></tr></thead><tbody>{forecast.map(x=><tr key={x.month} className="border-t"><td className="p-2">{x.month}</td><td className="p-2 text-right">{x.pred.toLocaleString("tr-TR",{maximumFractionDigits:1})}%</td><td className="p-2 text-right">{x.low.toLocaleString("tr-TR",{maximumFractionDigits:1})}%</td><td className="p-2 text-right">{(x.low+x.band).toLocaleString("tr-TR",{maximumFractionDigits:1})}%</td></tr>)}</tbody></table></div>}</article>
       </section>
 
-      <section className="rounded-2xl border border-stone-300 bg-white p-5 sm:p-7"><SectionLabel>04 · Aynı gün karşılaştırması</SectionLabel><h2 className="mt-2 font-serif text-3xl font-bold">Son ölçüm gününün geçmiş 10 yılı</h2><p className="mt-2 text-sm leading-6 text-stone-600">Son ölçümün ayı ve günü ({new Date(last.Tarih).getDate()}.{new Date(last.Tarih).getMonth()+1}) için bulunan yıllar karşılaştırılır; eksik tarihler gösterilmez.</p>{sameDay.length?<div className="mt-5 h-72" role="img" aria-label="Son ölçümün aynı takvim günündeki geçmiş on yıl karşılaştırması"><ResponsiveContainer width="100%" height="100%"><BarChart data={sameDay}><CartesianGrid strokeDasharray="3 3" stroke="#dedbd2"/><XAxis dataKey="year"/><YAxis domain={[0,100]} tickFormatter={v=>`${v}%`}/><Tooltip formatter={v=>[`${Number(v).toLocaleString("tr-TR",{maximumFractionDigits:1})}%`,names[reservoir]]}/><Bar dataKey="value" name={names[reservoir]} fill="#176b50" radius={[4,4,0,0]}/></BarChart></ResponsiveContainer></div>:<Empty/>}<p className="mt-3 text-sm leading-6 text-stone-600"><b>Grafik özeti:</b> {names[reservoir]} için aynı takvim gününde bulunan {sameDay.length} yıllık kayıt gösterilir.</p><button className="mt-3 rounded-lg border border-stone-400 px-3 py-2 text-sm underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-800" onClick={()=>setShowSameDayTable(!showSameDayTable)}>{showSameDayTable?"Karşılaştırma tablosunu gizle":"Veriyi tablo olarak gör"}</button>{showSameDayTable&&<div className="mt-3 overflow-auto"><table className="w-full text-sm"><thead><tr><th className="p-2 text-left">Yıl</th><th className="p-2 text-right">Doluluk</th></tr></thead><tbody>{sameDay.map(x=><tr key={x.year} className="border-t"><td className="p-2">{x.year}</td><td className="p-2 text-right">{x.value.toLocaleString("tr-TR",{maximumFractionDigits:1})}%</td></tr>)}</tbody></table></div>}</section>
+      <section className="rounded-2xl border border-stone-300 bg-white p-5 sm:p-7"><SectionLabel>04 · Aynı gün karşılaştırması</SectionLabel><h2 className="mt-2 font-serif text-3xl font-bold">Son ölçüm gününün geçmiş 10 yılı</h2><p className="mt-2 text-sm leading-6 text-stone-600">Canlı kaynak ölçümünün ayı ve günü (kaynak yanıt vermezse tarihsel son ölçüm) için geçmiş 10 yılda veri bulunan yıllar karşılaştırılır; eksik tarihler gösterilmez.</p>{sameDay.length?<div className="mt-5 h-72" role="img" aria-label="Son ölçümün aynı takvim günündeki geçmiş on yıl karşılaştırması"><ResponsiveContainer width="100%" height="100%"><BarChart data={sameDay}><CartesianGrid strokeDasharray="3 3" stroke="#dedbd2"/><XAxis dataKey="year"/><YAxis domain={[0,100]} tickFormatter={v=>`${v}%`}/><Tooltip formatter={v=>[`${Number(v).toLocaleString("tr-TR",{maximumFractionDigits:1})}%`,names[reservoir]]}/><Bar dataKey="value" name={names[reservoir]} fill="#176b50" radius={[4,4,0,0]}/></BarChart></ResponsiveContainer></div>:<Empty/>}<p className="mt-3 text-sm leading-6 text-stone-600"><b>Grafik özeti:</b> {names[reservoir]} için aynı takvim gününde bulunan {sameDay.length} yıllık kayıt gösterilir.</p><button className="mt-3 rounded-lg border border-stone-400 px-3 py-2 text-sm underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-800" onClick={()=>setShowSameDayTable(!showSameDayTable)}>{showSameDayTable?"Karşılaştırma tablosunu gizle":"Veriyi tablo olarak gör"}</button>{showSameDayTable&&<div className="mt-3 overflow-auto"><table className="w-full text-sm"><thead><tr><th className="p-2 text-left">Yıl</th><th className="p-2 text-right">Doluluk</th></tr></thead><tbody>{sameDay.map(x=><tr key={x.year} className="border-t"><td className="p-2">{x.year}</td><td className="p-2 text-right">{x.value.toLocaleString("tr-TR",{maximumFractionDigits:1})}%</td></tr>)}</tbody></table></div>}</section>
 
       <section className="rounded-2xl border border-stone-300 bg-white p-5 sm:p-7"><SectionLabel>05 · Ayrıntılı veri</SectionLabel><h2 className="mt-2 font-serif text-3xl font-bold">Günlük kayıt tablosu</h2><p className="mt-2 text-sm text-stone-600">Sütun başlıklarına tıklayarak sıralayın. Filtreler seçili barajın doluluk oranına ve tarihe uygulanır; en fazla 250 satır gösterilir.</p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
