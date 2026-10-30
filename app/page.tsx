@@ -159,7 +159,7 @@ export default function Home() {
       <div className="relative z-10 mx-auto grid max-w-[1500px] gap-9 px-5 pb-12 pt-10 sm:px-8 sm:pb-16 sm:pt-14 lg:grid-cols-[minmax(0,1fr)_330px] lg:items-end">
         <div>
           <p className="hero-kicker">İSTANBUL · SU VE İKLİM DOSYASI</p>
-          <h1 className="hero-title mt-6 max-w-6xl font-serif text-5xl font-black uppercase leading-[.98] tracking-[-.045em] sm:text-7xl lg:text-[clamp(5rem,8vw,8.6rem)]">İSTANBUL BARAJLARINDA DOLULUK DURUMU</h1>
+          <h1 className="hero-title mt-6 max-w-6xl font-serif text-4xl font-black uppercase leading-[1.02] tracking-[-.04em] sm:text-6xl lg:text-[clamp(3.8rem,5vw,4.7rem)]">İSTANBUL BARAJLARINDA DOLULUK DURUMU</h1>
           <p className="hero-description mt-7 max-w-3xl text-lg leading-8 sm:text-2xl sm:leading-10">Barajların tarihsel doluluk oranlarını inceleyin, mevsimsel değişimleri karşılaştırın ve geleceğe yönelik tahminleri keşfedin.</p>
           <div className="mt-8 flex flex-wrap items-center gap-5 sm:gap-7">
             <a className="hero-source" href={sourceUrl} target="_blank" rel="noreferrer">İBB AÇIK VERİ KAYNAĞI <span aria-hidden="true">↗</span></a>
