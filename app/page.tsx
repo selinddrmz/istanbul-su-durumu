@@ -75,23 +75,64 @@ export default function Home() {
     error?: string;
   } | null>(null);
   useEffect(() => {
-    fetch("/api/iski")
-      .then((res) => {
-        if (!res.ok) throw new Error("İSKİ verisi alınamadı");
-        return res.json();
-      })
-      .then((json) => {
-        setCurrentWater(json);
-      })
-      .catch((err) => {
-        console.error("Güncel veri hatası:", err);
-        setCurrentWater({
-          data: [],
-          sonGuncellemeZamani: null,
-          error: err instanceof Error ? err.message : "Güncel veri alınamadı.",
-          sourceUrl: "https://www.dolulukorani.com/api/v1/provinces/istanbul/history?days=30",
+    let active = true;
+
+    const loadCurrentWater = async () => {
+      try {
+        const response = await fetch("/api/iski", {
+          cache: "no-store",
+          signal: AbortSignal.timeout(25000),
         });
-      });
+        const json = await response.json();
+        if (!response.ok || !Array.isArray(json?.data) || !json.data.length) {
+          throw new Error(json?.detail || json?.error || "Güncel veri alınamadı.");
+        }
+        if (active) setCurrentWater(json);
+      } catch (liveError) {
+        // Canlı kaynaklar erişilemezse GitHub Actions'ın son başarılı günlük
+        // snapshot'ını kullan. Bu kayıt canlı ölçüm gibi etiketlenmez.
+        try {
+          const snapshotResponse = await fetch("/iski-guncel.json", {
+            cache: "no-store",
+            signal: AbortSignal.timeout(8000),
+          });
+          if (!snapshotResponse.ok) throw new Error("Henüz otomatik veri kaydı bulunmuyor.");
+          const snapshot = await snapshotResponse.json();
+          const records = Array.isArray(snapshot?.data) ? snapshot.data : [];
+          const latest = [...records].sort((a, b) =>
+            String(a.date ?? a.tarih ?? "").localeCompare(String(b.date ?? b.tarih ?? ""))
+          ).at(-1);
+          const rawRate = Number(latest?.fill_rate ?? latest?.fillRate ?? latest?.dolulukOrani ?? latest?.value);
+          if (!latest || !Number.isFinite(rawRate) || rawRate < 0) {
+            throw new Error("Son otomatik kayıtta geçerli doluluk değeri bulunamadı.");
+          }
+          const measuredAt = latest.date ?? latest.tarih ?? null;
+          if (active) {
+            setCurrentWater({
+              data: [{ dolulukOrani: rawRate > 1 ? rawRate / 100 : rawRate, tarih: measuredAt }],
+              sonGuncellemeZamani: snapshot.retrievedAt ?? measuredAt,
+              sourceName: "Son başarılı otomatik veri kaydı",
+              sourceUrl: snapshot.sourceUrl ?? "https://www.dolulukorani.com/api/v1/provinces/istanbul/history?days=30",
+              attribution: "Canlı API'ye erişilemediği için son başarılı günlük kayıt gösteriliyor.",
+              freshness: "Bu kayıt canlı değildir; ölçüm tarihi kontrol edilmelidir.",
+            });
+          }
+        } catch (snapshotError) {
+          console.error("Güncel veri ve snapshot yüklenemedi:", liveError, snapshotError);
+          if (active) {
+            setCurrentWater({
+              data: [],
+              sonGuncellemeZamani: null,
+              error: liveError instanceof Error ? liveError.message : "Güncel veri alınamadı.",
+              sourceUrl: "https://www.dolulukorani.com/api/v1/provinces/istanbul/history?days=30",
+            });
+          }
+        }
+      }
+    };
+
+    void loadCurrentWater();
+    return () => { active = false; };
   }, []);
   const last=rows[rows.length-1];
   const years=rows.map(r=>new Date(r.Tarih).getFullYear()).filter(Number.isFinite);
