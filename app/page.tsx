@@ -108,9 +108,14 @@ export default function Home() {
   // tarihsel ortalaması; belirsizlik bandı ±1 örnek standart sapmadır.
   const forecast = useMemo(() => {
     if (!filtered.length) return [];
-    const latestDate = new Date(filtered[filtered.length - 1].Tarih);
+    // Tahmin ufku güncel ölçüm tarihinden başlar; tarihsel dosyanın 2024'te
+    // bitmesi, tahminin de 2024'te başlatılmasına neden olmamalıdır.
+    const liveDate = currentWater?.data?.[0]?.tarih
+      ? new Date(currentWater.data[0].tarih)
+      : new Date();
+    const baseDate = Number.isNaN(liveDate.getTime()) ? new Date() : liveDate;
     return Array.from({ length: 12 }, (_, index) => {
-      const date = new Date(latestDate.getFullYear(), latestDate.getMonth() + index + 1, 1);
+      const date = new Date(baseDate.getFullYear(), baseDate.getMonth() + index + 1, 1);
       const monthValues = filtered
         .filter((row) => new Date(row.Tarih).getMonth() === date.getMonth())
         .map((row) => Number(row[reservoir]))
@@ -126,7 +131,7 @@ export default function Home() {
         pred: average * 100,
       };
     });
-  }, [filtered, reservoir]);
+  }, [filtered, reservoir, currentWater]);
   const sameDay=useMemo(()=>{
     if(!last)return [];
     const d=new Date(last.Tarih),y=d.getFullYear();
