@@ -157,7 +157,7 @@ export default function Home() {
     <header className="border-b border-stone-300"><div className="mx-auto max-w-7xl px-5 py-7 sm:px-8">
       <p className="text-xs font-bold uppercase tracking-[.22em] text-emerald-800">İstanbul · Su ve iklim dosyası</p>
       <div className="mt-3 grid gap-5 md:grid-cols-[1fr_260px] md:items-end">
-        <div><h1 className="max-w-4xl font-serif text-4xl font-bold leading-tight sm:text-6xl">İstanbul’un suyu: doluluk, eğilim ve belirsizlik</h1>
+        <div><h1 className="max-w-4xl font-serif text-4xl font-bold leading-tight sm:text-6xl">İstanbul barajlarında doluluk durumu</h1>
         <p className="mt-4 max-w-[65ch] leading-7 text-stone-700">Barajların tarihsel doluluk kayıtlarını inceleyin, mevsimsel örüntüleri karşılaştırın ve geçmiş veriye dayalı basit tahmini keşfedin.</p></div>
         <aside className="border-l-2 border-emerald-800 pl-4 text-sm leading-6 text-stone-600"><b className="text-stone-900">Tarihsel veri paneli</b><p>Son ölçüm: {dateText(last.Tarih)}</p><p>Panel yükleme zamanı: {loadedAt}</p></aside>
       </div>
