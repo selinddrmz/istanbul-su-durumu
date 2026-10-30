@@ -101,33 +101,29 @@ export default function Home() {
     const xs=filtered.filter(r=>new Date(r.Tarih).getMonth()===i).map(r=>Number(r[reservoir])).filter(Number.isFinite);
     return {month:new Date(2000,i,1).toLocaleDateString("tr-TR",{month:"short"}),avg:mean(xs)*100,count:xs.length};
   }),[filtered,reservoir]);
-  const [analysisForecast, setAnalysisForecast] = useState<any[]>([]);
-
-useEffect(() => {
-  fetch("/su_analiz_sonuclari.json")
-    .then((res) => {
-      if (!res.ok) throw new Error("Analiz dosyası yüklenemedi");
-      return res.json();
-    })
-    .then((json) => {
-      console.log("Jupyter tahmin kayıtları:", json.tahmin?.length);
-      setAnalysisForecast(json.tahmin ?? []);
-    })
-    .catch((err) => console.error(err));
-}, []);
-const forecast = useMemo(() => {
-  if (analysisForecast.length === 0) return [];
-
-  return analysisForecast.map((item) => ({
-    month: new Date(item.tarih + "T00:00:00").toLocaleDateString("tr-TR", {
-      month: "short",
-      year: "numeric",
-    }),
-    low: item.alt_sinir * 100,
-    band: (item.ust_sinir - item.alt_sinir) * 100,
-    pred: item.tahmin * 100,
-  }));
-}, [analysisForecast]);
+  // 12 aylık ileri tahmin: seçili tarih aralığındaki aynı takvim aylarının
+  // tarihsel ortalaması; belirsizlik bandı ±1 örnek standart sapmadır.
+  const forecast = useMemo(() => {
+    if (!filtered.length) return [];
+    const latestDate = new Date(filtered[filtered.length - 1].Tarih);
+    return Array.from({ length: 12 }, (_, index) => {
+      const date = new Date(latestDate.getFullYear(), latestDate.getMonth() + index + 1, 1);
+      const monthValues = filtered
+        .filter((row) => new Date(row.Tarih).getMonth() === date.getMonth())
+        .map((row) => Number(row[reservoir]))
+        .filter((value) => Number.isFinite(value));
+      const average = mean(monthValues);
+      const deviation = sd(monthValues);
+      const lower = Math.max(0, average - deviation);
+      const upper = Math.min(1, average + deviation);
+      return {
+        month: date.toLocaleDateString("tr-TR", { month: "short", year: "numeric" }),
+        low: lower * 100,
+        band: (upper - lower) * 100,
+        pred: average * 100,
+      };
+    });
+  }, [filtered, reservoir]);
   const sameDay=useMemo(()=>{
     if(!last)return [];
     const d=new Date(last.Tarih),y=d.getFullYear();
@@ -136,7 +132,7 @@ const forecast = useMemo(() => {
       return match?[{year:String(year),value:Number(match[reservoir])*100}]:[];
     });
   },[rows,last,reservoir]);
-  const details=useMemo(()=>filtered.filter(r=>!search||r.Tarih.toLocaleLowerCase("tr-TR").includes(search.toLocaleLowerCase("tr-TR"))||reservoirs.some(k=>names[k].toLocaleLowerCase("tr-TR").includes(search.toLocaleLowerCase("tr-TR")))).sort((a,b)=>{
+  const details=useMemo(()=>filtered.filter(r=>!search||dateText(r.Tarih).toLocaleLowerCase("tr-TR").includes(search.toLocaleLowerCase("tr-TR"))).sort((a,b)=>{
     const av=sortKey==="Tarih"?+new Date(a.Tarih):Number(a[sortKey]),bv=sortKey==="Tarih"?+new Date(b.Tarih):Number(b[sortKey]);
     return (av-bv)*(ascending?1:-1);
   }).slice(0,250),[filtered,search,sortKey,ascending]);
@@ -195,7 +191,7 @@ const forecast = useMemo(() => {
           <label className="text-sm font-semibold">Baraj<select className="field" value={reservoir} onChange={e=>setReservoir(e.target.value)}>{reservoirs.map(k=><option key={k} value={k}>{names[k]}</option>)}</select></label>
           <label className="text-sm font-semibold">Başlangıç yılı<select className="field" value={startYear} onChange={e=>setStartYear(e.target.value)}>{Array.from({length:maxYear-minYear+1},(_,i)=>minYear+i).map(y=><option key={y}>{y}</option>)}</select></label>
           <label className="text-sm font-semibold">Bitiş yılı<select className="field" value={endYear} onChange={e=>setEndYear(e.target.value)}>{Array.from({length:maxYear-minYear+1},(_,i)=>minYear+i).map(y=><option key={y}>{y}</option>)}</select></label>
-          <label className="text-sm font-semibold">Tabloda ara<input className="field" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Tarih veya baraj adı…"/></label>
+          <label className="text-sm font-semibold">Tarihe göre ara<input className="field" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Örn. 19.02.2024"/></label>
         </div>
         {Number(startYear)>Number(endYear)&&<p className="mt-3 text-sm text-red-700">Başlangıç yılı bitiş yılından büyük olamaz.</p>}
       </section>
@@ -214,7 +210,7 @@ const forecast = useMemo(() => {
 
       <section className="grid gap-6 xl:grid-cols-2">
         <article className="rounded-2xl border border-stone-300 bg-white p-5 sm:p-7"><SectionLabel>02 · İkincil grafik</SectionLabel><h2 className="mt-2 font-serif text-3xl font-bold">Mevsimsel örüntü</h2><p className="mt-2 text-sm leading-6 text-stone-600">Seçilen yıllarda her ayın ortalama doluluk oranı.</p><div className="mt-5 h-72" role="img" aria-label={`${names[reservoir]} aylık ortalama doluluk grafiği`}><ResponsiveContainer width="100%" height="100%"><BarChart data={monthly}><CartesianGrid strokeDasharray="3 3" stroke="#dedbd2"/><XAxis dataKey="month"/><YAxis domain={[0,100]} tickFormatter={v=>`${v}%`}/><Tooltip formatter={v=>[`${Number(v).toLocaleString("tr-TR",{maximumFractionDigits:1})}%`,"Aylık ortalama"]}/><Bar dataKey="avg" fill="#176b50" radius={[4,4,0,0]}/></BarChart></ResponsiveContainer></div><p className="mt-3 text-sm leading-6 text-stone-600"><b>Grafik özeti:</b> Aylık ortalamalar mevsimsel farkları gösterir, geleceği garanti etmez.</p></article>
-        <article className="rounded-2xl border border-stone-300 bg-white p-5 sm:p-7"><SectionLabel>03 · Zorunlu ileri özellik</SectionLabel><h2 className="mt-2 font-serif text-3xl font-bold">Mevsimsel tahmin ve belirsizlik</h2><p className="mt-2 text-sm leading-6 text-stone-600">Çizgi, geçmiş yılların aynı ay ortalamasını; gölgeli bant ±1 standart sapmayı gösterir.</p><div className="mt-5 h-72" role="img" aria-label={`${names[reservoir]} için mevsimsel tahmin ve belirsizlik bandı`}><ResponsiveContainer width="100%" height="100%"><ComposedChart data={forecast}><CartesianGrid strokeDasharray="3 3" stroke="#dedbd2"/><XAxis dataKey="month"/><YAxis domain={[0,100]} tickFormatter={v=>`${v}%`}/><Tooltip formatter={(v,n)=>[`${Number(v).toLocaleString("tr-TR",{maximumFractionDigits:1})}%`,String(n)]}/><Area dataKey="low" stackId="range" stroke="none" fill="#fff" name="Alt sınır"/><Area dataKey="band" stackId="range" stroke="none" fill="#a7cdb8" fillOpacity={.9} name="Belirsizlik bandı"/><Line dataKey="pred" name="Mevsimsel ortalama" stroke="#176b50" strokeWidth={3} dot={{r:3}}/></ComposedChart></ResponsiveContainer></div><p className="mt-3 text-sm leading-6 text-stone-600"><b>Yöntem sınırı:</b> Tahmin yağış, tüketim, hava durumu veya işletme kararlarını içermez. Kaynak verisi 19.02.2024’te sona erdiğinden bu grafik güncel durum ya da resmî tahmin değildir.</p></article>
+        <article className="rounded-2xl border border-stone-300 bg-white p-5 sm:p-7"><SectionLabel>03 · Zorunlu ileri özellik</SectionLabel><h2 className="mt-2 font-serif text-3xl font-bold">Mevsimsel tahmin ve belirsizlik</h2><p className="mt-2 text-sm leading-6 text-stone-600">Önümüzdeki 12 ay için çizgi, seçilen dönemdeki aynı ayların ortalamasını; gölgeli bant ±1 standart sapmayı gösterir.</p><div className="mt-5 h-72" role="img" aria-label={`${names[reservoir]} için mevsimsel tahmin ve belirsizlik bandı`}><ResponsiveContainer width="100%" height="100%"><ComposedChart data={forecast}><CartesianGrid strokeDasharray="3 3" stroke="#dedbd2"/><XAxis dataKey="month"/><YAxis domain={[0,100]} tickFormatter={v=>`${v}%`}/><Tooltip formatter={(v,n)=>[`${Number(v).toLocaleString("tr-TR",{maximumFractionDigits:1})}%`,String(n)]}/><Area dataKey="low" stackId="range" stroke="none" fill="#fff" name="Alt sınır"/><Area dataKey="band" stackId="range" stroke="none" fill="#a7cdb8" fillOpacity={.9} name="Belirsizlik bandı"/><Line dataKey="pred" name="Mevsimsel ortalama" stroke="#176b50" strokeWidth={3} dot={{r:3}}/></ComposedChart></ResponsiveContainer></div><p className="mt-3 text-sm leading-6 text-stone-600"><b>Yöntem sınırı:</b> Bu basit mevsimsel tahmin, seçilen tarih aralığındaki aynı takvim aylarının ortalamasını kullanır; gölgeli alan ±1 örnek standart sapmadır. Yağış, tüketim, hava durumu ve işletme kararlarını içermez; resmî tahmin veya güncel ölçüm değildir.</p></article>
       </section>
 
       <section className="rounded-2xl border border-stone-300 bg-white p-5 sm:p-7"><SectionLabel>04 · Aynı gün karşılaştırması</SectionLabel><h2 className="mt-2 font-serif text-3xl font-bold">Son ölçüm gününün geçmiş 10 yılı</h2><p className="mt-2 text-sm leading-6 text-stone-600">Son ölçümün ayı ve günü ({new Date(last.Tarih).getDate()}.{new Date(last.Tarih).getMonth()+1}) için bulunan yıllar karşılaştırılır; eksik tarihler gösterilmez.</p>{sameDay.length?<div className="mt-5 h-72" role="img" aria-label="Son ölçümün aynı takvim günündeki geçmiş on yıl karşılaştırması"><ResponsiveContainer width="100%" height="100%"><BarChart data={sameDay}><CartesianGrid strokeDasharray="3 3" stroke="#dedbd2"/><XAxis dataKey="year"/><YAxis domain={[0,100]} tickFormatter={v=>`${v}%`}/><Tooltip formatter={v=>[`${Number(v).toLocaleString("tr-TR",{maximumFractionDigits:1})}%`,names[reservoir]]}/><Bar dataKey="value" name={names[reservoir]} fill="#176b50" radius={[4,4,0,0]}/></BarChart></ResponsiveContainer></div>:<Empty/>}<p className="mt-3 text-sm leading-6 text-stone-600"><b>Grafik özeti:</b> {names[reservoir]} için aynı takvim gününde bulunan {sameDay.length} yıllık kayıt gösterilir.</p></section>
