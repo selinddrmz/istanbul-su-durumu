@@ -1,26 +1,78 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f7f5ef;
+  --foreground: #172b36;
 }
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+html { scroll-behavior: smooth; }
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+.hero-shell {
+  background:
+    radial-gradient(ellipse at 80% 16%, rgba(255,255,255,.96) 0 10%, transparent 34%),
+    radial-gradient(ellipse at 84% 90%, rgba(93,184,207,.34), transparent 42%),
+    linear-gradient(118deg,#fbf8f0 0%,#f3f4ef 47%,#d9edf0 100%);
+}
+.hero-watermark {
+  position:absolute; z-index:0; inset:0; pointer-events:none; opacity:.75;
+  background:
+    radial-gradient(ellipse at 82% 100%, transparent 0 23%, rgba(255,255,255,.72) 23.2% 23.5%, transparent 23.8% 28%, rgba(67,159,190,.22) 28.2% 28.5%, transparent 28.8%),
+    radial-gradient(ellipse at 60% 110%, transparent 0 29%, rgba(255,255,255,.72) 29.2% 29.5%, transparent 29.8% 35%, rgba(56,151,180,.18) 35.2% 35.5%, transparent 35.8%),
+    linear-gradient(170deg,transparent 56%,rgba(113,190,207,.13) 57%,rgba(255,255,255,.58) 70%,rgba(55,154,184,.22) 100%);
+}
+.hero-kicker {
+  display:flex; align-items:center; gap:.9rem; color:#07566a;
+  font-size:.9rem; font-weight:900; letter-spacing:.24em;
+}
+.hero-kicker::before { content:""; width:2.2rem; height:2px; background:#087b83; }
+.hero-title {
+  color:#073346;
+  background:linear-gradient(105deg,#061f31 0%,#0b4055 28%,#087e8b 48%,#073346 68%,#155b70 84%,#062c40 100%);
+  background-size:220% auto;
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 5px 2px rgba(4,43,58,.13));
+  animation: title-shimmer 8s ease-in-out infinite alternate;
+}
+@keyframes title-shimmer { from { background-position:0% center; } to { background-position:100% center; } }
+.hero-description { color:#425564; font-weight:500; }
+.hero-source {
+  display:inline-flex; align-items:center; gap:.7rem; border-radius:999px;
+  padding:1rem 1.65rem; color:white; font-size:.95rem; font-weight:900; letter-spacing:.08em;
+  background:linear-gradient(115deg,#19a889,#07506b); box-shadow:0 10px 24px rgba(8,100,113,.22);
+  text-decoration:none; transition:transform .2s ease,box-shadow .2s ease;
+}
+.hero-source:hover { transform:translateY(-2px); box-shadow:0 14px 30px rgba(8,100,113,.3); }
+.hero-date { display:flex; align-items:center; gap:1rem; border-left:1px solid rgba(9,66,82,.22); padding-left:1.5rem; color:#183c4b; font-size:1rem; line-height:1.6; }
+.hero-info-card {
+  border:1px solid rgba(255,255,255,.85); border-radius:1.5rem; padding:1.5rem;
+  background:rgba(255,255,255,.68); backdrop-filter:blur(14px);
+  box-shadow:0 18px 48px rgba(18,83,101,.12); color:#425564; font-size:1rem; line-height:1.8;
+}
+.hero-info-title { display:flex; align-items:center; gap:.7rem; margin-bottom:1.1rem; color:#07566a; font-size:.9rem; font-weight:900; letter-spacing:.12em; }
+.hero-info-card p:not(.hero-info-title) { margin-top:.55rem; }
+.hero-info-card p:not(.hero-info-title) span { display:inline-block; width:1.5rem; color:#087b83; }
+.hero-info-card b { color:#102f40; }
+.hero-info-note { border-top:1px solid rgba(9,66,82,.15); padding-top:.8rem; font-size:.86rem; }
+.kpi-card { border:1px solid rgba(16,70,88,.09); border-bottom:3px solid #2f9fc1; box-shadow:0 12px 28px rgba(27,61,72,.08); }
+.kpi-card:nth-child(2) { border-bottom-color:#a66be0; }
+.kpi-card:nth-child(3) { border-bottom-color:#18a98c; }
+.kpi-card:nth-child(4) { border-bottom-color:#ef7770; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior:auto; }
+  .hero-title { animation:none; }
+  .hero-source { transition:none; }
+}
+@media (max-width: 640px) {
+  .hero-kicker { font-size:.72rem; letter-spacing:.16em; }
+  .hero-title { font-size:clamp(3rem,14vw,5rem); }
+  .hero-date { border-left:0; padding-left:0; }
 }
