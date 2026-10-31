@@ -1,12 +1,8 @@
 {
   "source": "dolulukorani.com (official authority data aggregation)",
   "sourceUrl": "https://www.dolulukorani.com/api/v1/provinces/istanbul/history?days=30",
-  "retrievedAt": "2026-10-30T13:04:01.883623+00:00",
+  "retrievedAt": "2026-10-31T12:42:31.910694+00:00",
   "data": [
-    {
-      "date": "2026-10-01",
-      "fill_rate": 38.4
-    },
     {
       "date": "2026-10-03",
       "fill_rate": 39
@@ -98,6 +94,10 @@
     {
       "date": "2026-10-30",
       "fill_rate": 53.7
+    },
+    {
+      "date": "2026-10-31",
+      "fill_rate": 53.8
     }
   ],
   "attribution": "Kaynak: dolulukorani.com (resmi kurum verilerinden derlenmiştir)"
